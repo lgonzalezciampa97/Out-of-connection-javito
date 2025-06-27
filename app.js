@@ -2,8 +2,9 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 /* Game parameters */
+let gameStarted = false;
 let score = 0;
-
+let lastScoreUpdate = 0;
 /*Player---------------------------------------------------------*/
 // Player image
 const playerImage = new Image();
@@ -13,16 +14,25 @@ playerImage.src = 'resources/javito.png';
 const player = {
     x: 0,
     y: 0,
-    width: 180,
-    height: 140,
+    width: 160,
+    height: 110,
     speed: 8,
     movingUp: false,
-    movingDown: false
+    movingDown: false,
+    isMoving: false
 };
+
+window.addEventListener('keydown', function iniciarJuego() {
+    if (!gameStarted) {
+        gameStarted = true;
+        window.removeEventListener('keydown', iniciarJuego);
+        animate(); // arranca la animación
+    }
+});
 
 // Player center on canvas
 function centrarPlayer() {
-    player.x = canvas.width / 2 - player.width / 2;
+    player.x = canvas.width / 2 - player.width / 2; //or 230
     player.y = canvas.height / 2 - player.height / 2;
 }
 
@@ -30,9 +40,19 @@ function centrarPlayer() {
 function updatePlayer() {
     if (player.movingUp && player.y > 0) {
         player.y -= player.speed;
+        player.isMoving = true;
     }
     if (player.movingDown && player.y + player.height < canvas.height) {
         player.y += player.speed;
+        player.isMoving = true;
+    }
+}
+
+function updateScore() {
+    const now = performance.now();
+    if (player.isMoving && now - lastScoreUpdate >= 250) { // 250ms = 1/4 de segundo
+        score += 1;
+        lastScoreUpdate = now;
     }
 }
 
@@ -59,23 +79,38 @@ window.addEventListener("keyup", (e) => {
     }
 });
 
-/* Draw Score --------------------------------------------------- */
+/* Draw Game Score and Game Start --------------------------------------------------- */
 function drawScore() {
     ctx.font = '32px "Comic Sans MS", cursive, sans-serif';
     ctx.textAlign = 'right';
 
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 5;
     ctx.strokeStyle = 'navy';
     ctx.strokeText(`Puntaje: ${score}`, canvas.width - 20, 40);
 
     // fill
-    ctx.fillStyle = 'rgba(0, 200, 255, 0.9)';
-    ctx.shadowColor = 'rgba(0, 100, 255, 0.8)';
+    ctx.fillStyle = "#05F0A5";
+    ctx.shadowColor = "#460073​";
     ctx.shadowBlur = 4;
     ctx.fillText(`Puntaje: ${score}`, canvas.width - 20, 40);
 
     // clean shadow
     ctx.shadowBlur = 0;
+}
+
+function drawStartMessage() {
+    const text = 'Presiona cualquier tecla para empezar';
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.font = '36px "Comic Sans MS", cursive';
+    ctx.fillStyle = "#05F0A5";
+    ctx.shadowBlur = 4;
+    ctx.lineWidth = 5;
+    ctx.textAlign = 'center';
+
+    ctx.strokeText(text, canvas.width / 2, canvas.height / 2);
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
 }
 
 
@@ -142,12 +177,11 @@ function animate() {
     });
 
     updatePlayer();
+    updateScore();
     drawPlayer();
     drawScore();
     requestAnimationFrame(animate);
 }
-
-animate();
 
 /*Canvas resize-------------------------------------------------*/
 
@@ -155,8 +189,9 @@ function resizeCanvas() {
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
 }
+/*---------------------------------------------------------------*/
+
 resizeCanvas();
 centrarPlayer();
+drawStartMessage();
 window.addEventListener('resize', resizeCanvas);
-
-/*---------------------------------------------------------------*/
