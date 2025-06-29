@@ -108,7 +108,7 @@ function updateScore() {
     }
 
     if (score >= dificultadEscalon) {
-        intervaloObjetos = Math.max( intervaloObjetos - 25, 50);
+        intervaloObjetos = Math.max( intervaloObjetos - 50, 50);
         dificultadEscalon += 500;
     }
 }
@@ -438,6 +438,7 @@ window.addEventListener('keydown', (e) => {
         if (now - gameOverTimestamp >= 1000) {
             gameState = 'select';
             vida = maxVida;
+            dificultadEscalon = 500;
             score = 0;
             objetosActivos.length = 0;
             seleccionando = true;
