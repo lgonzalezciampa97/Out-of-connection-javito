@@ -13,6 +13,8 @@ bgMusic.volume = 0.2;
 
 let score = 0;
 let lastScoreUpdate = 0;
+let objetosQueDan = 0;
+let objetosQueQuitan = 0;
 let gameState = 'start';
 let pulseTime = 0;
 let seleccionando = false;
@@ -108,7 +110,7 @@ function updateScore() {
     }
 
     if (score >= dificultadEscalon) {
-        intervaloObjetos = Math.max( intervaloObjetos - 50, 50);
+        intervaloObjetos = Math.max(intervaloObjetos - 50, 50);
         dificultadEscalon += 500;
     }
 }
@@ -146,28 +148,28 @@ function drawVida() {
 // Obstáculos y Colisiones
 // ===========================
 const objetos = [
-    { nombre: "heladito", imgSrc: "resources/obstaculos/heladito.png" },
-    { nombre: "ancla", imgSrc: "resources/obstaculos/ancla.png" },
-    { nombre: "chancla", imgSrc: "resources/obstaculos/chancla.png" },
-    { nombre: "estrella1", imgSrc: "resources/obstaculos/estrella1.png" },
-    { nombre: "estrella2", imgSrc: "resources/obstaculos/estrella2.png" },
-    { nombre: "flamenco", imgSrc: "resources/obstaculos/flamenco.png" },
+    // Objetos que quitan vida
+    { nombre: "pez bug", imgSrc: "resources/obstaculos/pez-bug.png", vida: -20 },
+    { nombre: "medusa usb", imgSrc: "resources/obstaculos/medusa-usb.png", vida: -20 },
+    { nombre: "ancla", imgSrc: "resources/obstaculos/ancla.png", vida: -20 },
+    { nombre: "chancla", imgSrc: "resources/obstaculos/chancla.png", vida: -20 },
+    // Objetos que suman vida
+    { nombre: "java", imgSrc: "resources/obstaculos/java.png", vida: +5 },
+    { nombre: "calamar springboot", imgSrc: "resources/obstaculos/calamar-springboot.png", vida: +5 }
 ];
 
-function objetoDaVida(nombre) {
-    return nombre === "heladito";
-}
 
 const objetosActivos = [];
 
 function crearObjeto() {
-    const obj = objetos[Math.floor(Math.random() * objetos.length)];
+    const base = objetos[Math.floor(Math.random() * objetos.length)];
     const img = new Image();
-    img.src = obj.imgSrc;
+    img.src = base.imgSrc;
 
     return {
-        nombre: obj.nombre,
+        nombre: base.nombre,
         img: img,
+        vida: base.vida,
         x: canvas.width + 50,
         y: Math.random() * (canvas.height - 80),
         width: 60,
@@ -262,20 +264,82 @@ function drawSelectPlayerMessage() {
         ctx.fill();
     });
 
+    // Texto principal
     ctx.font = '32px "Comic Sans MS"';
     ctx.textAlign = 'center';
     ctx.strokeStyle = 'navy';
     ctx.fillStyle = "#05F0A5";
     ctx.shadowColor = '#000';
     ctx.shadowBlur = 4;
-    ctx.strokeText('Selecciona un Javito para empezar', canvas.width / 2, 80);
-    ctx.fillText('Selecciona un Javito para empezar', canvas.width / 2, 80);
+    ctx.strokeText('Selecciona un Javito para empezar', canvas.width / 2, 40);
+    ctx.fillText('Selecciona un Javito para empezar', canvas.width / 2, 40);
     ctx.shadowBlur = 0;
 
+    const objetosQueQuitan = [
+        { src: "resources/obstaculos/pez-bug.png", nombre: "Pez Bug", signo: "−", img: null },
+        { src: "resources/obstaculos/medusa-usb.png", nombre: "Medusa USB", signo: "−", img: null },
+        { src: "resources/obstaculos/ancla.png", nombre: "Ancla", signo: "−", img: null },
+        { src: "resources/obstaculos/chancla.png", nombre: "Chancla", signo: "−", img: null },
+    ];
+    const objetosQueDan = [
+        { src: "resources/obstaculos/calamar-springboot.png", nombre: "Calamar SpringBoot", signo: "+", img: null },
+        { src: "resources/obstaculos/java.png", nombre: "Taza de Java", signo: "+", img: null },
+    ];
+
+    function precargarImagenes(arr) {
+        arr.forEach(obj => {
+            obj.img = new Image();
+            obj.img.src = obj.src;
+        });
+    }
+
+    precargarImagenes(objetosQueQuitan);
+    precargarImagenes(objetosQueDan);
+
+
+    const listaX1 = 120; // Izquierda
+    const listaX2 = canvas.width - 400; // Derecha
+    const itemYStart = 100;
+    const itemSpacing = 45;
+    const iconSize = 42;
+
+    // Fondo negro con bordes redondeados
+    const boxY = itemYStart - 40;
+    const objetosActivosHeight = 4 * itemSpacing + 80;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.beginPath();
+    ctx.roundRect(60, boxY, canvas.width - 120, objetosActivosHeight, 15);
+    ctx.fill();
+
+    // Títulos
+    ctx.font = '20px Comic Sans MS';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText("Objetos que quitan vida", listaX1 + 80, itemYStart - 10);
+    ctx.fillText("Objetos que dan vida", listaX2 + 80, itemYStart - 10);
+
+    function dibujarListaVertical(arr, xBase) {
+        arr.forEach((obj, i) => {
+            const y = itemYStart + i * itemSpacing;
+            if (obj.img && obj.img.complete) {
+                ctx.drawImage(obj.img, xBase, y, iconSize, iconSize);
+            }
+            ctx.fillStyle = obj.signo === "+" ? "#00e676" : "#f44336";
+            ctx.font = '20px Comic Sans MS';
+            ctx.textAlign = 'left'
+            ctx.fillText(`${obj.signo} ${obj.nombre}`, xBase + iconSize + 10, y + 24);
+        });
+    }
+
+
+    dibujarListaVertical(objetosQueQuitan, listaX1);
+    dibujarListaVertical(objetosQueDan, listaX2);
+
+    // Dibujar personajes debajo
     const boxWidth = 100, boxHeight = 100, spacing = 40;
     const totalWidth = personajes.length * (boxWidth + spacing) - spacing;
     const startX = canvas.width / 2 - totalWidth / 2;
-    const y = canvas.height / 2;
+    const personajeY = objetosActivosHeight + 120;
+
     pulseTime += 0.05;
     const scale = 1 + Math.sin(pulseTime) * 0.05;
 
@@ -289,15 +353,17 @@ function drawSelectPlayerMessage() {
             height *= scale;
             ctx.strokeStyle = '#A100FF';
             ctx.lineWidth = 4;
-            ctx.strokeRect(x - 5, y - 5, width + 10, height + 10);
+            ctx.strokeRect(x - 5, personajeY - 5, width + 10, height + 10);
         }
 
         ctx.fillStyle = 'rgba(0, 51, 68, 0.6)';
-        ctx.fillRect(x, y, width, height);
-        ctx.drawImage(img, x + 10, y + 10, width - 20, height - 20);
+        ctx.fillRect(x, personajeY, width, height);
+        ctx.drawImage(img, x + 10, personajeY + 10, width - 20, height - 20);
+
         ctx.font = '14px Arial';
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(personajes[i].nombre, x + width / 2, y + height + 20);
+        ctx.textAlign = 'center';
+        ctx.fillText(personajes[i].nombre, x + width / 2, personajeY + height + 20);
     });
 }
 
@@ -371,13 +437,14 @@ function animate() {
         ctx.drawImage(obj.img, obj.x, obj.y, obj.width, obj.height);
 
         if (hayColision(player, obj)) {
-            if (objetoDaVida(obj.nombre)) {
+            vida = Math.max(0, Math.min(maxVida, vida + obj.vida));
+            if (obj.vida > 0) {
+                objetosQueDan++;
                 eatSound.play();
-                vida = Math.min(vida + 10, maxVida);
                 comerTiempo = performance.now();
             } else {
+                objetosQueQuitan++;
                 choqueSound.play();
-                vida = Math.max(vida - 10, 0);
                 dañoRecibidoTime = performance.now();
                 if (vida <= 0) {
                     gameState = 'gameover';
@@ -402,6 +469,7 @@ function animate() {
 // ===========================
 window.addEventListener('keydown', (e) => {
     if (gameState === 'start') {
+        beepSound.play();
         gameState = 'select';
         if (!seleccionando) {
             seleccionando = true;
